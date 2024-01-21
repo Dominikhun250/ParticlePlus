@@ -1,0 +1,137 @@
+package me.dominikhun250.plugin;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+
+public class Main extends JavaPlugin {
+   private File playersFile;
+   private FileConfiguration playersConfig;
+   private Map<UUID, Boolean> playerParticleEnabled = new HashMap();
+   private int taskId;
+
+   public void onEnable() {
+      this.getLogger().info("§aParticlePlugin betöltve");
+      this.saveDefaultConfig();
+      this.playersFile = new File(this.getDataFolder(), "players.yml");
+      this.playersConfig = YamlConfiguration.loadConfiguration(this.playersFile);
+      if (!this.playersConfig.isConfigurationSection("players")) {
+         this.playersConfig.createSection("players");
+      }
+
+      Iterator var2 = this.playersConfig.getConfigurationSection("players").getKeys(false).iterator();
+
+      while(var2.hasNext()) {
+         String key = (String)var2.next();
+         UUID playerUUID = UUID.fromString(key);
+         boolean particleEnabled = this.playersConfig.getBoolean("players." + key + ".particleEnabled");
+         this.playerParticleEnabled.put(playerUUID, particleEnabled);
+      }
+
+      this.taskId = (new BukkitRunnable() {
+         public void run() {
+            Iterator var2 = Main.this.getServer().getOnlinePlayers().iterator();
+
+            while(var2.hasNext()) {
+               Player player = (Player)var2.next();
+               Main.this.generateRandomParticleForPlayer(player);
+            }
+
+         }
+      }).runTaskTimer(this, 0L, (long)this.getConfig().getInt("delay")).getTaskId();
+   }
+
+   public void onDisable() {
+      this.getLogger().info("§cParticlePlugin kikapcsolva");
+      this.getServer().getScheduler().cancelTask(this.taskId);
+
+      try {
+         this.playersConfig.save(this.playersFile);
+      } catch (IOException var2) {
+         var2.printStackTrace();
+      }
+
+   }
+
+   public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+      if (cmd.getName().equalsIgnoreCase("particleplus")) {
+         if (!(sender instanceof Player)) {
+            sender.sendMessage("§7[§bParticle§8Plus§7]§r a parancsot csakis játkos használhatja!");
+            return true;
+         } else {
+            Player player = (Player)sender;
+            UUID playerId = player.getUniqueId();
+            if (args.length == 1) {
+               if (args[0].equalsIgnoreCase("help")) {
+                  player.sendMessage("§bParticlePlus §9v1.1.1");
+                  player.sendMessage("§8-----------------------");
+                  player.sendMessage("§b/particleplus on");
+                  player.sendMessage("§b/particleplus off");
+               } else if (args[0].equalsIgnoreCase("on")) {
+                  this.playerParticleEnabled.put(playerId, true);
+                  this.playersConfig.set("players." + String.valueOf(playerId) + ".particleEnabled", true);
+                  player.sendMessage("§7[§bParticle§8Plus§7]§r §aMegjelentek körülötted a részecskék!");
+               } else if (args[0].equalsIgnoreCase("off")) {
+                  this.playerParticleEnabled.put(playerId, false);
+                  this.playersConfig.set("players." + String.valueOf(playerId) + ".particleEnabled", false);
+                  player.sendMessage("§7[§bParticle§8Plus§7]§r §cMegjelent részecskéket eltávolítottuk körülötted.");
+               } else {
+                  player.sendMessage("§c/particleplus <on|off>");
+               }
+            } else {
+               player.sendMessage("§c/particleplus <on|off>");
+            }
+
+            this.savePlayersConfig();
+            return true;
+         }
+      } else {
+         return true;
+      }
+   }
+
+   private void generateRandomParticleForPlayer(Player player) {
+      boolean particleEnabled = (Boolean)this.playerParticleEnabled.getOrDefault(player.getUniqueId(), false);
+      if (particleEnabled) {
+         Location location = player.getEyeLocation();
+         Particle particle = Particle.valueOf(this.getConfig().getString("particle"));
+         int particleCount = this.getConfig().getInt("count");
+         float yOffset = 0.0F;
+         float extra = 0.0F;
+         Random random = new Random();
+
+         for(int i = 0; i < particleCount; ++i) {
+            float xOffset = (random.nextFloat() - 0.5F) * 2.0F;
+            float yOffsetRandom = (random.nextFloat() - 0.5F) * 2.0F;
+            float zOffset = (random.nextFloat() - 0.5F) * 2.0F;
+            location.getWorld().spawnParticle(particle, location.add((double)xOffset, (double)(yOffset + yOffsetRandom), (double)zOffset), 1, (double)xOffset, (double)yOffsetRandom, (double)zOffset, (double)extra);
+            location.subtract((double)xOffset, (double)(yOffset + yOffsetRandom), (double)zOffset);
+         }
+      }
+
+   }
+
+   private void savePlayersConfig() {
+      try {
+         this.playersConfig.save(this.playersFile);
+      } catch (IOException var2) {
+         var2.printStackTrace();
+      }
+
+   }
+}
+
+/* By: Dominikhun250 */

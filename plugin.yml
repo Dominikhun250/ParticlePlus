@@ -1,0 +1,10 @@
+name: ParticlePlus
+version: 1.1.1
+main: me.dominikhun250.plugin.Main
+author: dominikhun250
+description: Particlét idéző plugin
+commands:
+  particleplus:
+    description: Bekapcsolja vagy kikapcsolja a plugint
+    usage: /particleplus <on|off>
+    permission: particle.usage

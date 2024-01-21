@@ -1,0 +1,3 @@
+particle: SOUL_FIRE_FLAME #Particle neve
+count: 1 #Particle száma
+delay: 0.10 #Időzítő 1 = 1 másodperc

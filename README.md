@@ -1,4 +1,4 @@
-# ParticlePlus
+# ParticlePlus v1.1.1
 Minecraft plugin
 
 ---------------------------------------

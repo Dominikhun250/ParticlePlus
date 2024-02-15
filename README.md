@@ -1,5 +1,6 @@
 # ParticlePlus v1.1.1
 Minecraft plugin
+The plugin summon particles arround you.
 
 ---------------------------------------
 
